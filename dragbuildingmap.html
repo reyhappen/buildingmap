@@ -1,0 +1,336 @@
+﻿<html>
+<head>
+<meta charset="UTF-8" />
+<title>drag building map</title>
+</head>
+<body>
+<script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="js/buildingmap.js"></script>
+<script type="text/javascript">
+window.onload = function(){
+	//建筑图1
+	var dMap = dragMap({
+		dom: document.getElementById('J_mapviewport'),  //dom节点或者id字符串
+		width: 600, //可视区域宽度，默认600
+		height: 450 //可视区域高度，默认450
+	},{
+		bgUrl: 'images/mapbg.jpg', //背景图（建筑图）地址url
+		width: 800, //地图全区域宽度，默认背景图宽
+		height: 600 //地图全区域高度，默认背景图高
+	}, [
+		{id: 'DBid0', text: '楼栋0', left: 220, top: 100, level: 2},{id: 'DBid1', text: '楼栋1', left: 200, top: 160, level: 3}
+	], 1, [howTocreate, howTocreatePoint], {
+		oncreatepoint: function(point){
+			//console.log(this)
+		},
+		onaddpoint: function(point1){
+			//console.log(123)
+			//console.log(this, point1)
+		},
+		ondrag: function(target, left, top){
+			//console.log(this, target, left, top)
+		},
+		onpointdrag: function(target, left, top){
+			//console.log(this, target, left, top)
+		},
+		onremovepoint: function(point, isRemoved){
+			//console.log(this, point, isRemoved)
+		},
+		onpointenter: function(pointDom, e){
+			pointDom.style.zIndex = 10;
+			//console.log('enter', this, pointDom);
+		},
+		onpointleave: function(pointDom, e){
+			pointDom.style.zIndex = 0;
+			//console.log('leave', this, pointDom);
+		},
+		onpointclick: function(pointDom, left, top, e){
+			//console.log('click', this, pointDom);
+		}
+	}).addPoint({text: 'asd', left: 150, top: 130, level: 0});
+	
+	//建筑图2
+	var dMap1 = dragMap({
+		dom: document.getElementById('J_mapviewport1') || 'J_mapviewport1',  //dom节点或者id字符串
+		width: 600, //可视区域宽度，默认600
+		height: 450 //可视区域高度，默认450
+	},{
+		bgUrl: 'images/mapbg.jpg', //背景图（建筑图）地址url
+		width: 700, //地图全区域宽度，默认背景图宽
+		height: 250 //地图全区域高度，默认背景图高
+	}, [
+		{id: 'DBid0', text: '楼栋0', left: 0, top: 0, level: 0},{id: 'DBid1', text: '楼栋1', left: 50, top: 10, level: 1}
+	], 0, null, {
+		oncreatepoint: function(point){
+			//console.log(this)
+		},
+		onaddpoints: function(points){
+			//console.log('abc')
+			//console.log(this, points)
+		},
+		ondrag: function(target, left, top){
+			//console.log(this, target, left, top)
+		},
+		onremovepoint: function(point, isRemoved){
+			//console.log(this, point, isRemoved)
+		}
+	}).addPoints([{text: '第二图自动添加点1', left: 50, top: 30, level: 1},{text: '第二图自动添加点2', left: 80, top: 45, level: 0}]);
+	
+	var addposi = 0;
+	add.onclick = function(){
+		addposi++;
+		dMap.addPoint({text: '第一图手动添加点1', left: addposi*20, top: addposi*20, level: 3});
+	};
+	remove.onclick = function(){
+		dMap.removePoint({id:'DBid1'});
+	};
+	destroy.onclick = function(){
+		dMap.destroy();
+	};
+	setviewport.onclick = function(){
+		dMap.setViewPort(600, 800);
+	};
+	setmaparea.onclick = function(){
+		dMap.setMapArea(800, 600);
+	};
+	setMapUrl.onclick = function(){
+		dMap.changeMap('images/testchange.png', 1);
+	}
+	
+	
+	
+	var add1posi = 0;
+	add1.onclick = function(){
+		add1posi++;
+		dMap1.addPoints([{text: '第二图手动添加点3', left: add1posi*20, top: add1posi*20, level: 4},{text: '第二图手动添加点4', left: add1posi*30, top: add1posi*30, level: 5}]);
+	};
+	remove1.onclick = function(){
+		dMap1.removePoint(dMap1.options.points.length-1);
+	};
+	destroy1.onclick = function(){
+		dMap1.destroy();
+	};
+	setmaparea1.onclick = function(){
+		dMap1.setMapArea(500, 400);
+	};
+	
+	
+	
+	
+	//元素获取
+	var $doc = $(document), $win = $(window),
+		J_pointtransfer = document.getElementById('J_pointtransfer'),
+		J_mapviewport = document.getElementById('J_mapviewport'),
+		$J_pointtransfer = $(J_pointtransfer), $J_mapviewport = $('#J_mapviewport');
+	//事件代理
+	$doc.on('mousedown', '.J_olist li', function(e){
+		//获取元素相关信息
+		var $this = $(this), id = $this.attr('origid'), text = $this.text(),
+			lvl = $this.attr('level'), offset = $this.offset(),
+			deltaX = e.clientX - offset.left, deltaY = e.clientY - offset.top;//位置信息获取
+		//设置转换节点样式、内容与位置
+		$J_pointtransfer.attr({
+			'class':'pointtransfer level'+lvl
+		}).html(text + '<span class="J_removepoint" title="移除">x</span><s></s><i></i>').css({
+			'left': offset.left,
+			'top': offset.top
+		});
+		
+		//鼠标按下时才绑定移动事件
+		$doc.on('mousemove.transfer', function(e){
+			//clear selection
+			if(document.selection && document.selection.empty) {
+				document.selection.empty();  //IE
+			}else if(window.getSelection) {
+				window.getSelection().removeAllRanges(); //DOM
+			};
+			//鼠标移动时改变转换节点的位置，pageX, pageY包含了滚动条的位置
+			$J_pointtransfer.css({
+				'left': e.pageX - $win.scrollLeft() - deltaX,
+				'top': e.pageY - $win.scrollTop() - deltaY
+			});
+		});
+		
+		//鼠标抬起时移除移动事件的绑定与自身的绑定
+		$doc.on('mouseup.transfer', function(){
+			//位置相关信息获取
+			var transferRect = J_pointtransfer.getBoundingClientRect(),
+				viewportRect = J_mapviewport.getBoundingClientRect(),
+				transferL = transferRect.left, transferR = transferRect.right,
+				transferT = transferRect.top, transferB = transferRect.bottom,
+				viewportL = viewportRect.left, viewportR = viewportRect.right,
+				viewportT = viewportRect.top, viewportB = viewportRect.bottom,
+				map = $(J_mapviewport).children()[0],
+				mapRect = map.getBoundingClientRect(),
+				mapL = mapRect.left, mapR = mapRect.right,
+				mapT = mapRect.top, mapB = mapRect.bottom,
+				exists = false, points = dMap.options.points;
+            for(var i=0, il=points.length; i<il; i++){
+                if(points[i]['id'] === id){
+                    exists = true;
+                    break;
+                }
+            }
+			//位置判断，不在位置内
+			if(transferR < viewportL || transferL > viewportR || transferT > viewportB || transferB < viewportT || exists){
+				//以动画方式回溯
+				$J_pointtransfer.animate({
+					'left': offset.left - 10,
+					'top': offset.top - 10
+				}, 'fast', function(){
+					//动画结束还原位置
+					$J_pointtransfer.css({
+						'left': '-99em',
+						'top': '-99em'
+					});
+				});
+			}else{
+				if(transferR < mapL || transferL > mapR || transferT > mapB || transferB < mapT){
+					//以动画方式回溯
+					$J_pointtransfer.animate({
+						'left': offset.left - 10,
+						'top': offset.top - 10
+					}, 'fast', function(){
+						//动画结束还原位置
+						$J_pointtransfer.css({
+							'left': '-99em',
+							'top': '-99em'
+						});
+					});
+				}else{
+					var left = transferL - mapL,
+						top = transferT - mapT;
+					if(left <= 0){
+						left = 0;
+					}else if(left > mapR - mapL - (transferR - transferL)){
+						left = mapR - mapL - (transferR - transferL);
+					}
+					if(top <= 0){
+						top = 0;
+					}else if(top > mapB - mapT - (transferB - transferT)){
+						top = mapB - mapT - (transferB - transferT);
+					}
+					//转换点处于地图内部时，地图添加图点
+					dMap.addPoint({
+						id: id,
+						text: text,
+						level: lvl,
+						left: left, //用转换点减去视口区左侧与地图区left值
+						top: top
+					});
+					//位置还原
+					$J_pointtransfer.css({
+						'left': '-99em',
+						'top': '-99em'
+					});
+				}
+			}
+			//移出此次绑定事件避免重复触发
+			$(this).off('mousemove.transfer').off('mouseup.transfer');
+		});
+	}).on('click', '.J_removepoint', function(e) {
+		//移除点
+		console.log($(this.parentNode).attr('origid'))
+	    e.stopPropagation();
+	    dMap.removePoint({ id: $(this.parentNode).attr('origid') });
+	});
+}
+
+function transferMouseUp(e){
+	$(this).off('mousemove.transfer').off('mouseup.transfer');
+	
+}
+
+//如何创建建筑图的方法
+function howTocreate(mapWidth, mapHeight, mapBgUrl){
+	var me = this, opts = this.options, viewPort = opts.viewPort,
+		i=0, points = opts.points, il=points.length,
+		mapHTML = '<div role="map" class="J_buildingmap" style="position:absolute;left:'+ ((viewPort.width - mapWidth)/2) +'px;top:'+ ((viewPort.height - mapHeight)/2) +'px;z-index:0;width:'+ mapWidth +'px;height:'+ mapHeight +'px;background:url('+ mapBgUrl +');cursor:move;-webkit-user-select:none;-moz-user-select:none;user-select:none;">';
+	for(; i<il; i++){
+		mapHTML += me.createPoint.call(me, points[i]);
+	}
+	mapHTML += '</div>';
+	return mapHTML;
+}
+
+//如何创建建筑图点的方法
+function howTocreatePoint(point){
+	var isAdded = !('id' in point), pointHTML = '', id = (isAdded ? new Date().getTime() : point['id']);
+	pointHTML = '<div role="point" index='+ this.pointsCount +' isadded="'+ (isAdded ? 1 : 0) +'" origid="'+ id +'" class="J_point J_point'+ id +' level'+ point['level'] +'" style="position:absolute;left:'+ point['left'] +'px;top:'+ point['top'] +'px;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;" title="'+ point['text'] +'">'+ point['text'] +'<span class="J_removepoint" title="移除">x</span><s></s><i></i></div>';
+	return pointHTML;
+}
+
+</script>
+ 
+<style type="text/css">
+*{margin:0;padding:0;}
+/* 浮动与清理浮动 */
+.fl,.fr{display:inline;}
+.fl{float:left;}
+.fr{float:right;}
+.clear{*zoom:1;}
+.clear:after{visibility:hidden;display:block;font-size:0;content:" ";clear:both;height:0;}
+.sclear{clear:both;}
+.ovh{overflow:hidden;}
+
+
+
+.buildingmap{margin-top:50px;background:#eee;position:relative;width:100%;height:100%;/*宽高可改*/overflow:hidden;text-align:center;}
+.buildingmap div{cursor:move;}
+.pointtransfer{position:absolute;left:-99em;top:-99em;cursor:pointer;}
+.buildingmap div div, .pointtransfer{padding-left:10px;line-height:20px;border:1px solid #fff;cursor:pointer;color:#fff;white-space:nowrap;word-wrap:normal;word-break:keep-all;}
+.buildingmap div div span, .pointtransfer span{display:inline-block;*display:inline;zoom:1;width:20px;height:20px;line-height:19px;*line-height:17px;overflow:hidden;vertical-align:top;*vertical-align:middle;font-size:12px;font-family:arial;text-align:center;/*text-indent:-5em;*/}
+.buildingmap div div s, .pointtransfer s, .buildingmap div div i, .pointtransfer i{position:absolute;left:50%;bottom:-11px;margin-left:-5px;display:block;width:0;height:0;overflow:hidden;border-style:solid dashed dashed;border-width:10px 5px 0;border-color:#fff transparent transparent;}
+.buildingmap div div i, .pointtransfer i{bottom:-8px;}
+.viewmap{position:absolute;/**position:relative;*/left:0;right:250px;width:auto;height:100%;}
+.buildingmap div div.level0, .pointtransfer.level0{background:#333;}
+.buildingmap div div.level0 i, .pointtransfer.level0 i{border-top-color:#333;}
+.buildingmap div div.level1, .pointtransfer.level1{background:#fb2626;}
+.buildingmap div div.level1 i, .pointtransfer.level1 i{border-top-color:#fb2626;}
+.buildingmap div div.level2, .pointtransfer.level2{background:#1c86dc;}
+.buildingmap div div.level2 i, .pointtransfer.level2 i{border-top-color:#1c86dc;}
+.buildingmap div div.level3, .pointtransfer.level3{background:#094;}
+.buildingmap div div.level3 i, .pointtransfer.level3 i{border-top-color:#094;}
+.buildingmap div div.level4, .pointtransfer.level4{background:#ff9000;}
+.buildingmap div div.level4 i, .pointtransfer.level4 i{border-top-color:#ff9000;}
+.buildingmap div div.level5, .pointtransfer.level5{background:#d633ff;}
+.buildingmap div div.level5 i, .pointtransfer.level5 i{border-top-color:#d633ff;}
+
+
+.oprations span{display:inline-block;*display:inline;*zoom:1;padding:3px 5px;margin-right:10px;background:#0ff;}
+</style>
+
+
+<div class="fr">
+	<ul class="J_olist" style="padding-top:200px;">
+		<li origid="1-123" level="0">可拖动图点1</li>
+		<li origid="2-123" level="1">可拖动图点2</li>
+		<li origid="3-123" level="2">可拖动图点3</li>
+		<li origid="4-123" level="1">可拖动图点4</li>
+		<li origid="5-123" level="3">可拖动图点5</li>
+		<li origid="6-123" level="1">可拖动图点6</li>
+		<li origid="7-123" level="5">可拖动图点7</li>
+		<li origid="8-123" level="1">可拖动图点8</li>
+		<li origid="9-123" level="4">可拖动图点9</li>
+		<li origid="10-123" level="1">可拖动图点10</li>
+	</ul>
+</div>
+<div class="ovh">
+	<div style="width:600px;margin:30px auto;">
+		<div class="oprations"><span id="setviewport">设置视口宽高</span><span id="setmaparea">设置建筑图宽高</span><span id="add">新增一个</span><span id="remove">移除一个</span><span id="destroy">摧毁建筑图</span><span id="setMapUrl">设置地图url</span></div>
+		<div id="J_mapviewport" class="J_mapviewport buildingmap" style="position:relative;width:600px;height:480px;overflow:hidden;">建筑图</div>
+		
+	</div>
+	
+	
+	<div style="width:600px;margin:30px auto;">
+		<div class="oprations"><span id="setmaparea1">设置建筑图宽高</span><span id="add1">新增两个</span><span id="remove1">移除一个</span><span id="destroy1">摧毁建筑图</span></div>
+		<div id="J_mapviewport1" class="J_mapviewport buildingmap" style="position:relative;width:600px;height:480px;overflow:hidden;">建筑图1</div>
+		
+	</div>
+</div>
+</div>
+
+<div id="J_pointtransfer" class="pointtransfer"></div>
+</body>
+</html>
