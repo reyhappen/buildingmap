@@ -50,8 +50,8 @@
 				events = events || { };
 				me.originalPoints = points.concat([]);
 				me.added = [];
-				me.deleted = [];
 				me.edited = [];
+				me.deleted = [];
 				viewPort['dom'] = viewPortDom;
 				me.options = {
 					originalStyle: viewPortDom.style.cssText,
@@ -229,13 +229,13 @@
 		changeMap: function(url, ifchangeWH, callback){
 			if(url === '') return this;
 			//在图片加载完成之后再进行数据生成
-			var me = this, opts = this.options, viewPortDom = opts.viewPort,
+			var me = this, opts = this.options, viewPort = opts.viewPort,
 				mapArea = opts.mapArea, img = new Image();
 			
 			url = /\?/.test(url) ? url : url+'?';
 			
 			img.onerror = function(){
-				viewPortDom.innerHTML = '<div style="color:#f00;text-align:center;line-height:'+ viewHeight +'px">建筑图加载失败！</div>';
+				viewPort.dom.innerHTML = '<div style="color:#f00;text-align:center;line-height:'+ viewPort.height +'px">建筑图加载失败！</div>';
 				if(callback){
 					callback(false);
 				}
@@ -254,6 +254,7 @@
 				}
 			};
 			img.src = url;
+			return this;
 		},
 		setViewPort: function(width, height){
 			var viewPort = this.options.viewPort;
@@ -262,6 +263,7 @@
 			viewPort.dom.style.width = width;
 			viewPort.dom.style.height = height;
 			setCenter(this.options.mapArea.dom);
+			return this;
 		},
 		setMapArea: function(width, height){
 			var mapArea = this.options.mapArea;
@@ -270,6 +272,17 @@
 			mapArea.dom.style.width = width;
 			mapArea.dom.style.height = height;
 			setCenter(mapArea.dom);
+			return this;
+		},
+		clear: function(){
+			var opts = this.options;
+			opts.mapArea.dom.innerHTML = '';
+			this.originalPoints = [];
+			this.added = [];
+			this.edited = [];
+			this.deleted = [];
+			this.pointsCount = 0;
+			return this;
 		},
 		destroy: function(){
 			var opts = this.options;
