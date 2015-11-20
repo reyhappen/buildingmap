@@ -235,7 +235,7 @@
 			url = /\?/.test(url) ? url : url+'?';
 			
 			img.onerror = function(){
-				viewPort.dom.innerHTML = '<div style="color:#f00;text-align:center;line-height:'+ viewPort.height +'px">建筑图加载失败！</div>';
+				//viewPort.dom.innerHTML = '<div style="color:#f00;text-align:center;line-height:'+ viewPort.height +'px">建筑图加载失败！</div>';
 				if(callback){
 					callback(false);
 				}
