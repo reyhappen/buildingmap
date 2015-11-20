@@ -95,7 +95,10 @@ window.onload = function(){
 	};
 	setMapUrl.onclick = function(){
 		dMap.changeMap('images/testchange.png', 1);
-	}
+	};
+	clearMap.onclick = function(){
+		dMap.clear();
+	};
 	
 	
 	
@@ -317,7 +320,7 @@ function howTocreatePoint(point){
 </div>
 <div class="ovh">
 	<div style="width:600px;margin:30px auto;">
-		<div class="oprations"><span id="setviewport">设置视口宽高</span><span id="setmaparea">设置建筑图宽高</span><span id="add">新增一个</span><span id="remove">移除一个</span><span id="destroy">摧毁建筑图</span><span id="setMapUrl">设置地图url</span></div>
+		<div class="oprations"><span id="setviewport">设置视口宽高</span><span id="setmaparea">设置建筑图宽高</span><span id="add">新增一个</span><span id="remove">移除一个</span><span id="destroy">摧毁建筑图</span><span id="setMapUrl">设置地图url</span><span id="clearMap">清空</span></div>
 		<div id="J_mapviewport" class="J_mapviewport buildingmap" style="position:relative;width:600px;height:480px;overflow:hidden;">建筑图</div>
 		
 	</div>
