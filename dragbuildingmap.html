@@ -17,9 +17,9 @@ window.onload = function(){
 		bgUrl: 'images/mapbg.jpg', //背景图（建筑图）地址url
 		width: 800, //地图全区域宽度，默认背景图宽
 		height: 600 //地图全区域高度，默认背景图高
-	}, [
+	}, /*[
 		{id: 'DBid0', text: '楼栋0', left: 220, top: 100, level: 2},{id: 'DBid1', text: '楼栋1', left: 200, top: 160, level: 3}
-	], 1, [howTocreate, howTocreatePoint], {
+	]*/null, 1, [howTocreate, howTocreatePoint], {
 		oncreatepoint: function(point){
 			//console.log(this)
 		},
@@ -47,7 +47,7 @@ window.onload = function(){
 		onpointclick: function(pointDom, left, top, e){
 			//console.log('click', this, pointDom);
 		}
-	}).addPoint({text: 'asd', left: 150, top: 130, level: 0});
+	})/*.addPoint({text: 'asd', left: 150, top: 130, level: 0})*/;
 	
 	//建筑图2
 	var dMap1 = dragMap({

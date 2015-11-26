@@ -30,11 +30,10 @@
 	dragMap.prototype = {
 		constructor: dragMap,
 		init: function(viewPort, mapArea, points, editable, howTocreate, events){
-			if(!isArray(points)){
-				throw new Error('points参数必须是数组！');
-			}
+			points = points || [];
 			var me = this, viewPortDom = viewPort['dom'],
 				mapBgUrl = mapArea['bgUrl'] || '';
+			mapArea['img'] = new Image();
 			//获取视口节点
 			if(Object.prototype.toString.call(viewPortDom) == '[object String]'){
 				viewPortDom = doc.getElementById(viewPortDom);
@@ -73,6 +72,9 @@
 						},
 						onpointleave: events['onpointleave'] || function(target){
 							target.style.zIndex = 0;
+						},
+						onmapbgload: events['onmapbgload'] || function(successful){
+							
 						}
 					}
 				};
@@ -108,14 +110,12 @@
 				if(mapArea['width'] && mapArea['height']){
 					renderNbindEvents(me, editable, createMap, mapArea['width'], mapArea['height'], mapBgUrl);
 				}else{
+					mapArea['width'] = viewWidth;
+					mapArea['height'] = viewHeight;
 					if(mapBgUrl != ''){
-						this.changeMap(mapBgUrl, 1, function(successful){
-							//successful表示背景图片加载成功还是失败
-							renderNbindEvents(me, editable, createMap, mapArea['width'], mapArea['height'], mapBgUrl);
-						});
+						renderNbindEvents(me, editable, createMap, viewWidth, viewHeight, mapBgUrl);
+						this.changeMap(mapBgUrl, 1);
 					}else{
-						mapArea['width'] = viewWidth;
-						mapArea['height'] = viewHeight;
 						renderNbindEvents(me, editable, createMap, viewWidth, viewHeight, mapBgUrl);
 					}
 				}
@@ -167,6 +167,7 @@
 			return this;
 		},
 		addPoints: function(points){
+			if(points == null || typeof(points) == 'undefined') points = [];
 			var me = this, opts = me.options, ps = [], optPoints = opts.points,
 				tmp = doc.createElement('div'), tmpHTML = '',
 				frag = doc.createDocumentFragment();
@@ -198,7 +199,7 @@
 			//point可以是id可以是数组索引可以是数组下的元素（必须带有id属性）
 			var me = this, opts = me.options, mapDom = opts.mapArea.dom,
 				isRemoved = false, points = opts.points, pointIndex = parseInt(point);
-			if(points.length){
+			if(points && points.length){
 				if(isNaN(pointIndex)){
 					for(var i=0, il=points.length; i<il; i++){
 						if(point['id'] && point['id'] == points[i]['id']){
@@ -227,17 +228,20 @@
 			return this;
 		},
 		changeMap: function(url, ifchangeWH, callback){
-			if(url === '') return this;
+			var me = this, opts = this.options, viewPort = opts.viewPort, mapArea = opts.mapArea,
+				img = mapArea.img;
+			callback = callback || opts.events.onmapbgload;
+			if(!url && mapArea.dom){
+				mapArea.dom.style.backgroundImage = 'none';
+				return this;
+			}
+			url = (/\?/.test(url) ? url+'&v=' : url+'?v=') + Math.random();
+			
 			//在图片加载完成之后再进行数据生成
-			var me = this, opts = this.options, viewPort = opts.viewPort,
-				mapArea = opts.mapArea, img = new Image();
-			
-			url = /\?/.test(url) ? url : url+'?';
-			
 			img.onerror = function(){
 				//viewPort.dom.innerHTML = '<div style="color:#f00;text-align:center;line-height:'+ viewPort.height +'px">建筑图加载失败！</div>';
 				if(callback){
-					callback(false);
+					callback.call(me, false);
 				}
 				this.onerror = null;
 				this.onload = null;
@@ -248,10 +252,10 @@
 				}
 				
 				if(callback){
-					callback(true);
-				}else{
-					mapArea.dom.style.backgroundImage = 'url('+ url +')';
+					callback.call(me, true);
 				}
+				mapArea.dom.style.backgroundImage = 'url("'+ url +'")';
+				
 			};
 			img.src = url;
 			return this;
@@ -260,8 +264,8 @@
 			var viewPort = this.options.viewPort;
 			viewPort.width = width;
 			viewPort.height = height;
-			viewPort.dom.style.width = width;
-			viewPort.dom.style.height = height;
+			viewPort.dom.style.width = width+'px';
+			viewPort.dom.style.height = height+'px';
 			setCenter(this.options.mapArea.dom);
 			return this;
 		},
@@ -269,8 +273,8 @@
 			var mapArea = this.options.mapArea;
 			mapArea.width = width;
 			mapArea.height = height;
-			mapArea.dom.style.width = width;
-			mapArea.dom.style.height = height;
+			mapArea.dom.style.width = width+'px';
+			mapArea.dom.style.height = height+'px';
 			setCenter(mapArea.dom);
 			return this;
 		},
@@ -363,15 +367,17 @@
 					target = target.parentNode;
 				}
 				events.onpointleave.call(dragmap, target, e);
+			}else{
+				upHandler(e);
 			}
 		});
 		//建筑图点按下鼠标
 		addEvent(map, 'mousedown', function(e){
 			e = e || win.event;
-			var target = e.srcElement || e.target, mousePos= getMousePos(e),
-				_move = move(dragmap, editable, mousePos, map, viewPortDom.clientWidth, viewPortDom.clientHeight, map.clientWidth, map.clientHeight, target, target.offsetTop, target.offsetLeft);
-			upHandler.move = _move;
-			addEvent(doc, 'mousemove', _move);
+			var target = e.srcElement || e.target, mousePos= getMousePos(e);
+			
+			upHandler.move = move(dragmap, editable, mousePos, map, viewPortDom.clientWidth, viewPortDom.clientHeight, map.clientWidth, map.clientHeight, target, target.offsetTop, target.offsetLeft);
+			addEvent(doc, 'mousemove', upHandler.move);
 			addEvent(doc, 'mouseup', upHandler);
 			return false;
 		});
@@ -385,6 +391,7 @@
 				events.onpointclick.call(dragmap, target, left, top, event);
 			});
 		});
+		return map;
 	}
 	
 	//common events
@@ -436,7 +443,7 @@
 			}else if(win.getSelection) {
 				win.getSelection().removeAllRanges(); //DOM
 			};
-			if(target.innerHTML === ''){
+			if(target.innerHTML === '' && target != map){
 				return;
 				target = target.parentNode;
 			}
