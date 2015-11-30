@@ -23,13 +23,13 @@
 }*/
 (function(win){
 	var doc = win.document;
-	var dragMap = function(viewPort, mapArea, points, editable, howTocreate, events){
-		return new dragMap.prototype.init(viewPort, mapArea, points, editable, howTocreate, events);
+	var dragMap = function(viewPort, mapArea, points, editable, howTocreate, events, keysTransformer){
+		return new dragMap.prototype.init(viewPort, mapArea, points, editable, howTocreate, events, keysTransformer);
 	}
 	
 	dragMap.prototype = {
 		constructor: dragMap,
-		init: function(viewPort, mapArea, points, editable, howTocreate, events){
+		init: function(viewPort, mapArea, points, editable, howTocreate, events, keysTransformer){
 			points = points || [];
 			var me = this, viewPortDom = viewPort['dom'],
 				mapBgUrl = mapArea['bgUrl'] || '';
@@ -59,6 +59,7 @@
 					mapArea: mapArea,
 					points: points,
 					howTocreate: howTocreate,
+					keysTransformer: keysTransformer || {},
 					events: {
 						oncreatepoint: events['oncreatepoint'] || function(point){ },
 						onaddpoint: events['onaddpoint'] || function(point){ },
@@ -135,12 +136,14 @@
 		},
 		createPoint: function(point){
 			var opts = this.options, howTocreate = opts.howTocreate,
-				oncreatepoint = opts.events.oncreatepoint,
-				isAdded = !('id' in point), pointHTML = '';
+				oncreatepoint = opts.events.oncreatepoint, t = new Date().getTime(),
+				isAdded = !('id' in point), pointHTML = '', keytrans = opts.keysTransformer,
+				idkey = keytrans['id'] || 'id', leftkey = keytrans['left'] || 'left',
+				topkey = keytrans['top'] || 'top', textkey = keytrans['text'] || 'text';
 			if(howTocreate && howTocreate[1]){
 				pointHTML = howTocreate[1].call(this, point);
 			}else{
-				pointHTML = '<div role="point" origid="'+ point['id'] +'" index='+ this.pointsCount +' isadded="'+ (isAdded ? 1 : 0) +'" class="J_point J_point'+ (isAdded ? new Date().getTime() : point['id']) +'" style="position:absolute;left:'+ point['left'] +'px;top:'+ point['top'] +'px;z-index:0;-webkit-user-select:none;-moz-user-select:none;user-select:none;">'+ point['text'] +'<s></s><i></i></div>';
+				pointHTML = '<div role="point" origid="'+ point[idkey] +'" index='+ this.pointsCount +' isadded="'+ (isAdded ? 1 : 0) +'" class="J_point J_point'+ (isAdded ? t : point[idkey]) +'" style="position:absolute;left:'+ point[leftkey] +'px;top:'+ point[topkey] +'px;z-index:0;-webkit-user-select:none;-moz-user-select:none;user-select:none;" title="'+ point[textkey] +'">'+ point[textkey] +'<s></s><i></i></div>';
 			}
 			oncreatepoint.call(this, point);
 			this.pointsCount++;
@@ -198,11 +201,13 @@
 		removePoint: function(point){
 			//point可以是id可以是数组索引可以是数组下的元素（必须带有id属性）
 			var me = this, opts = me.options, mapDom = opts.mapArea.dom,
-				isRemoved = false, points = opts.points, pointIndex = parseInt(point);
+				isRemoved = false, points = opts.points,
+				pointIndex = parseInt(point), idkey = opts.keysTransformer['id'] || 'id';
+			
 			if(points && points.length){
 				if(isNaN(pointIndex)){
 					for(var i=0, il=points.length; i<il; i++){
-						if(point['id'] && point['id'] == points[i]['id']){
+						if(point[idkey] && point[idkey] == points[i][idkey]){
 							//移除dom
 							mapDom.removeChild(mapDom.childNodes[i]);
 							points.splice(i, 1);
@@ -211,7 +216,7 @@
 							break;
 						}
 					}
-				}else{
+				}else if(pointIndex > this.timeStamp){
 					var pointNode = mapDom.childNodes[pointIndex];
 					if(!pointNode.getAttribute('isadded')){
 						me.deleted.push(points[pointIndex]);
@@ -248,7 +253,7 @@
 			};
 			img.onload = function(){
 				if(ifchangeWH){
-					me.setMapArea(this['width'], this['height']);
+					me.setMapArea(this.naturalWidth || this.Width || this.width, this.naturalHeight || this.Height || this.height);
 				}
 				
 				if(callback){
@@ -280,19 +285,28 @@
 		},
 		clear: function(){
 			var opts = this.options;
-			opts.mapArea.dom.innerHTML = '';
+			if(!opts) return this;
+			var mapDom = opts.mapArea.dom;
+			while(mapDom.firstChild){
+				mapDom.removeChild(mapDom.firstChild);
+			}
 			this.originalPoints = [];
 			this.added = [];
 			this.edited = [];
 			this.deleted = [];
 			this.pointsCount = 0;
+			if(window.CollectGarbage) CollectGarbage();
 			return this;
 		},
 		destroy: function(){
 			var opts = this.options;
-			opts.viewPort.dom.style.cssText = opts.originalStyle;
-			opts.viewPort.dom.innerHTML = opts.originalHTML;
+			if(!opts) return this;
+			var viewport = opts.viewPort.dom;
+			viewport.removeChild(viewport.firstChild);
+			viewport.style.cssText = opts.originalStyle;
+			viewport.innerHTML = opts.originalHTML;
 			this.originalPoints = this.pointsCount = this.options = this.added = this.edited = this.deleted = null;
+			if(window.CollectGarbage) CollectGarbage();
 			delete this.originalPoints;
 			delete this.pointsCount;
 			delete this.options;
@@ -367,8 +381,18 @@
 					target = target.parentNode;
 				}
 				events.onpointleave.call(dragmap, target, e);
-			}else{
-				upHandler(e);
+			}
+		});
+		//建筑图点鼠标移出
+		addEvent(map, 'mouseleave', function(e) {
+			e = e || win.event;
+			var target = e.srcElement || e.target;
+			if(target == map){
+				try{
+					upHandler(e);
+				}catch(e){
+
+				}
 			}
 		});
 		//建筑图点按下鼠标
@@ -417,8 +441,9 @@
 	};
 	//元素移动方法
 	function move(dragmap, editable, oldPos, map, viewWidth, viewHeight, mapWidth, mapHeight, target, t, l){
-		var deltaX = oldPos.x - l, deltaY = oldPos.y - t, points = dragmap.options.points,
-			pointDoms = map.childNodes, point = null;
+		var deltaX = oldPos.x - l, deltaY = oldPos.y - t, opts = dragmap.options,
+			points = opts.points, pointDoms = map.childNodes, point = null,
+			idkey = opts.keysTransformer['id'] || 'id';
 		/*if(target != map){
 			for(var i=0, il=pointDoms.length; i<il; i++){
 				var pointDomi = pointDoms[i];

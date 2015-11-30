@@ -17,9 +17,9 @@ window.onload = function(){
 		bgUrl: 'images/mapbg.jpg', //背景图（建筑图）地址url
 		width: 800, //地图全区域宽度，默认背景图宽
 		height: 600 //地图全区域高度，默认背景图高
-	}, /*[
+	}, [
 		{id: 'DBid0', text: '楼栋0', left: 220, top: 100, level: 2},{id: 'DBid1', text: '楼栋1', left: 200, top: 160, level: 3}
-	]*/null, 1, [howTocreate, howTocreatePoint], {
+	]/*null*/, 1, [howTocreate, howTocreatePoint], {
 		oncreatepoint: function(point){
 			//console.log(this)
 		},
@@ -79,7 +79,7 @@ window.onload = function(){
 	var addposi = 0;
 	add.onclick = function(){
 		addposi++;
-		dMap.addPoint({text: '第一图手动添加点1', left: addposi*20, top: addposi*20, level: 3});
+		dMap.addPoint({id: 'DBid0', text: '楼栋0', left: 0, top: 0, level: 0});
 	};
 	remove.onclick = function(){
 		dMap.removePoint({id:'DBid1'});
@@ -233,7 +233,7 @@ window.onload = function(){
 		});
 	}).on('click', '.J_removepoint', function(e) {
 		//移除点
-		console.log($(this.parentNode).attr('origid'))
+		//console.log($(this.parentNode).attr('origid'))
 	    e.stopPropagation();
 	    dMap.removePoint({ id: $(this.parentNode).attr('origid') });
 	});
